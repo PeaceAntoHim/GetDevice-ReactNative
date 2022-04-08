@@ -1,191 +1,122 @@
-// React Native Geolocation
-// https://aboutreact.com/react-native-geolocation/
-
 // import React in our code
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 
 // import all the components we are going to use
 import {
   SafeAreaView,
-  View,
   Text,
-  StyleSheet,
-  Image,
+  View,
+  Linking,
+  TouchableHighlight,
   PermissionsAndroid,
   Platform,
-  Button,
+  StyleSheet,
 } from 'react-native';
 
-//import all the components we are going to use.
-import Geolocation from '@react-native-community/geolocation';
+// import CameraKitCameraScreen
+import {CameraKitCameraScreen} from 'react-native-camera-kit';
 
 const App = () => {
-  const [
-    currentLongitude,
-    setCurrentLongitude
-  ] = useState('...');
-  const [
-    currentLatitude,
-    setCurrentLatitude
-  ] = useState('...');
-  const [
-    locationStatus,
-    setLocationStatus
-  ] = useState('');
+  const [qrvalue, setQrvalue] = useState('');
+  const [opneScanner, setOpneScanner] = useState(false);
 
-  useEffect(() => {
-    const requestLocationPermission = async () => {
-      if (Platform.OS === 'ios') {
-        getOneTimeLocation();
-        subscribeLocationLocation();
-      } else {
+  const onOpenlink = () => {
+    // If scanned then function to open URL in Browser
+    Linking.openURL(qrvalue);
+  };
+
+  const onBarcodeScan = (qrvalue) => {
+    // Called after te successful scanning of QRCode/Barcode
+    setQrvalue(qrvalue);
+    setOpneScanner(false);
+  };
+
+  const onOpneScanner = () => {
+    // To Start Scanning
+    if (Platform.OS === 'android') {
+      async function requestCameraPermission() {
         try {
           const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+            PermissionsAndroid.PERMISSIONS.CAMERA,
             {
-              title: 'Location Access Required',
-              message: 'This App needs to Access your location',
+              title: 'Camera Permission',
+              message: 'App needs permission for camera access',
             },
           );
           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            //To Check, If Permission is granted
-            getOneTimeLocation();
-            subscribeLocationLocation();
+            // If CAMERA Permission is granted
+            setQrvalue('');
+            setOpneScanner(true);
           } else {
-            setLocationStatus('Permission Denied');
+            alert('CAMERA permission denied');
           }
         } catch (err) {
+          alert('Camera permission err', err);
           console.warn(err);
         }
       }
-    };
-    requestLocationPermission();
-    return () => {
-      Geolocation.clearWatch(watchID);
-    };
-  }, []);
-
-  const getOneTimeLocation = () => {
-    setLocationStatus('Getting Location ...');
-    Geolocation.getCurrentPosition(
-      //Will give you the current location
-      (position) => {
-        setLocationStatus('You are Here');
-
-        //getting the Longitude from the location json
-        const currentLongitude = 
-          JSON.stringify(position.coords.longitude);
-
-        //getting the Latitude from the location json
-        const currentLatitude = 
-          JSON.stringify(position.coords.latitude);
-
-        //Setting Longitude state
-        setCurrentLongitude(currentLongitude);
-        
-        //Setting Longitude state
-        setCurrentLatitude(currentLatitude);
-      },
-      (error) => {
-        setLocationStatus(error.message);
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 30000,
-        maximumAge: 1000
-      },
-    );
-  };
-
-  const subscribeLocationLocation = () => {
-    watchID = Geolocation.watchPosition(
-      (position) => {
-        //Will give you the location on location change
-        
-        setLocationStatus('You are Here');
-        console.log(position);
-
-        //getting the Longitude from the location json        
-        const currentLongitude =
-          JSON.stringify(position.coords.longitude);
-
-        //getting the Latitude from the location json
-        const currentLatitude = 
-          JSON.stringify(position.coords.latitude);
-
-        //Setting Longitude state
-        setCurrentLongitude(currentLongitude);
-
-        //Setting Latitude state
-        setCurrentLatitude(currentLatitude);
-      },
-      (error) => {
-        setLocationStatus(error.message);
-      },
-      {
-        enableHighAccuracy: false,
-        maximumAge: 1000
-      },
-    );
+      // Calling the camera permission function
+      requestCameraPermission();
+    } else {
+      setQrvalue('');
+      setOpneScanner(true);
+    }
   };
 
   return (
     <SafeAreaView style={{flex: 1}}>
-      <View style={styles.container}>
-        <View style={styles.container}>
-          <Image
-            source={{
-              uri:
-                'https://raw.githubusercontent.com/AboutReact/sampleresource/master/location.png',
-            }}
-            style={{width: 100, height: 100}}
+      {opneScanner ? (
+        <View style={{flex: 1}}>
+          <CameraKitCameraScreen
+            showFrame={false}
+            // Show/hide scan frame
+            scanBarcode={true}
+            // Can restrict for the QR Code only
+            laserColor={'blue'}
+            // Color can be of your choice
+            frameColor={'yellow'}
+            // If frame is visible then frame color
+            colorForScannerFrame={'black'}
+            // Scanner Frame color
+            onReadCode={(event) =>
+              onBarcodeScan(event.nativeEvent.codeStringValue)
+            }
           />
-          <Text style={styles.boldText}>
-            {locationStatus}
-          </Text>
-          <Text
-            style={{
-              justifyContent: 'center',
-              alignItems: 'center',
-              marginTop: 16,
-            }}>
-            Longitude: {currentLongitude}
-          </Text>
-          <Text
-            style={{
-              justifyContent: 'center',
-              alignItems: 'center',
-              marginTop: 16,
-            }}>
-            Latitude: {currentLatitude}
-          </Text>
-          <View style={{marginTop: 20}}>
-            <Button
-              title="Button"
-              onPress={getOneTimeLocation}
-            />
-          </View>
         </View>
-        <Text
-          style={{
-            fontSize: 18,
-            textAlign: 'center',
-            color: 'grey'
-          }}>
-          React Native Geolocation
-        </Text>
-        <Text
-          style={{
-            fontSize: 16,
-            textAlign: 'center',
-            color: 'grey'
-          }}>
-          www.aboutreact.com
-        </Text>
-      </View>
+      ) : (
+        <View style={styles.container}>
+          <Text style={styles.titleText}>
+            Barcode and QR Code Scanner using Camera in React Native
+          </Text>
+          <Text style={styles.textStyle}>
+            {qrvalue ? 'Scanned Result: ' + qrvalue : ''}
+          </Text>
+          {qrvalue.includes('https://') ||
+          qrvalue.includes('http://') ||
+          qrvalue.includes('geo:') ? (
+            <TouchableHighlight onPress={onOpenlink}>
+              <Text style={styles.textLinkStyle}>
+                {
+                  qrvalue.includes('geo:') ?
+                  'Open in Map' : 'Open Link'
+                }
+              </Text>
+            </TouchableHighlight>
+          ) : null}
+          <TouchableHighlight
+            onPress={onOpneScanner}
+            style={styles.buttonStyle}>
+            <Text style={styles.buttonTextStyle}>
+              Open QR Scanner
+            </Text>
+          </TouchableHighlight>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
+
+export default App;
 
 const styles = StyleSheet.create({
   container: {
@@ -193,13 +124,33 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 10,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  boldText: {
-    fontSize: 25,
-    color: 'red',
-    marginVertical: 16,
+  titleText: {
+    fontSize: 22,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  textStyle: {
+    color: 'black',
+    fontSize: 16,
+    textAlign: 'center',
+    padding: 10,
+    marginTop: 16,
+  },
+  buttonStyle: {
+    fontSize: 16,
+    color: 'white',
+    backgroundColor: 'green',
+    padding: 5,
+    minWidth: 250,
+  },
+  buttonTextStyle: {
+    padding: 5,
+    color: 'white',
+    textAlign: 'center',
+  },
+  textLinkStyle: {
+    color: 'blue',
+    paddingVertical: 20,
   },
 });
-
-export default App;
