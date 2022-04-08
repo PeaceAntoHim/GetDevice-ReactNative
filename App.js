@@ -1,118 +1,205 @@
+// React Native Geolocation
+// https://aboutreact.com/react-native-geolocation/
+
 // import React in our code
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 
 // import all the components we are going to use
 import {
-  StyleSheet,
-  Text,
   SafeAreaView,
   View,
-  TouchableOpacity,
+  Text,
+  StyleSheet,
+  Image,
+  PermissionsAndroid,
+  Platform,
+  Button,
 } from 'react-native';
 
-import DeviceInfoAsync from './pages/DeviceInfoAsync';
-import DeviceInfoConstants from './pages/DeviceInfoConstants';
-import DeviceInfoSync from './pages/DeviceInfoSync';
-import DeviceInfoHooks from './pages/DeviceInfoHooks';
+//import all the components we are going to use.
+import Geolocation from '@react-native-community/geolocation';
 
 const App = () => {
-  const [activeTab, setActiveTab] = useState('constant');
-  const [] = useState({});
+  const [
+    currentLongitude,
+    setCurrentLongitude
+  ] = useState('...');
+  const [
+    currentLatitude,
+    setCurrentLatitude
+  ] = useState('...');
+  const [
+    locationStatus,
+    setLocationStatus
+  ] = useState('');
+
+  useEffect(() => {
+    const requestLocationPermission = async () => {
+      if (Platform.OS === 'ios') {
+        getOneTimeLocation();
+        subscribeLocationLocation();
+      } else {
+        try {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+            {
+              title: 'Location Access Required',
+              message: 'This App needs to Access your location',
+            },
+          );
+          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            //To Check, If Permission is granted
+            getOneTimeLocation();
+            subscribeLocationLocation();
+          } else {
+            setLocationStatus('Permission Denied');
+          }
+        } catch (err) {
+          console.warn(err);
+        }
+      }
+    };
+    requestLocationPermission();
+    return () => {
+      Geolocation.clearWatch(watchID);
+    };
+  }, []);
+
+  const getOneTimeLocation = () => {
+    setLocationStatus('Getting Location ...');
+    Geolocation.getCurrentPosition(
+      //Will give you the current location
+      (position) => {
+        setLocationStatus('You are Here');
+
+        //getting the Longitude from the location json
+        const currentLongitude = 
+          JSON.stringify(position.coords.longitude);
+
+        //getting the Latitude from the location json
+        const currentLatitude = 
+          JSON.stringify(position.coords.latitude);
+
+        //Setting Longitude state
+        setCurrentLongitude(currentLongitude);
+        
+        //Setting Longitude state
+        setCurrentLatitude(currentLatitude);
+      },
+      (error) => {
+        setLocationStatus(error.message);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 30000,
+        maximumAge: 1000
+      },
+    );
+  };
+
+  const subscribeLocationLocation = () => {
+    watchID = Geolocation.watchPosition(
+      (position) => {
+        //Will give you the location on location change
+        
+        setLocationStatus('You are Here');
+        console.log(position);
+
+        //getting the Longitude from the location json        
+        const currentLongitude =
+          JSON.stringify(position.coords.longitude);
+
+        //getting the Latitude from the location json
+        const currentLatitude = 
+          JSON.stringify(position.coords.latitude);
+
+        //Setting Longitude state
+        setCurrentLongitude(currentLongitude);
+
+        //Setting Latitude state
+        setCurrentLatitude(currentLatitude);
+      },
+      (error) => {
+        setLocationStatus(error.message);
+      },
+      {
+        enableHighAccuracy: false,
+        maximumAge: 1000
+      },
+    );
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {activeTab === 'constant' ? (
-        <DeviceInfoConstants
-          title="React Native Device Info - Constant Info" 
-        />
-      ) : activeTab === 'sync' ? (
-        <DeviceInfoSync
-          title="React Native Device Info - Sync Info"
-        />
-      ) : activeTab === 'async' ? (
-        <DeviceInfoAsync
-          title="React Native Device Info - Device info Async"
-        />
-      ) : activeTab === 'hooks' ? (
-        <DeviceInfoHooks
-          title="React Native Device Info - Device info Hook"
-        />
-      ) : null}
-
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => setActiveTab('constant')}>
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'constant' && styles.boldText,
-            ]}>
-            Constant
+    <SafeAreaView style={{flex: 1}}>
+      <View style={styles.container}>
+        <View style={styles.container}>
+          <Image
+            source={{
+              uri:
+                'https://raw.githubusercontent.com/AboutReact/sampleresource/master/location.png',
+            }}
+            style={{width: 100, height: 100}}
+          />
+          <Text style={styles.boldText}>
+            {locationStatus}
           </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => setActiveTab('sync')}>
           <Text
-            style={[
-              styles.tabText,
-              activeTab === 'sync' && styles.boldText
-            ]}>
-            Sync
+            style={{
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginTop: 16,
+            }}>
+            Longitude: {currentLongitude}
           </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => setActiveTab('async')}>
           <Text
-            style={[
-              styles.tabText,
-              activeTab === 'async' && styles.boldText
-            ]}>
-            Async
+            style={{
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginTop: 16,
+            }}>
+            Latitude: {currentLatitude}
           </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => setActiveTab('hooks')}>
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'hooks' && styles.boldText
-            ]}>
-            Hooks
-          </Text>
-        </TouchableOpacity>
+          <View style={{marginTop: 20}}>
+            <Button
+              title="Button"
+              onPress={getOneTimeLocation}
+            />
+          </View>
+        </View>
+        <Text
+          style={{
+            fontSize: 18,
+            textAlign: 'center',
+            color: 'grey'
+          }}>
+          React Native Geolocation
+        </Text>
+        <Text
+          style={{
+            fontSize: 16,
+            textAlign: 'center',
+            color: 'grey'
+          }}>
+          www.aboutreact.com
+        </Text>
       </View>
     </SafeAreaView>
   );
 };
-export default App;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5FCFF',
-  },
-  tabBar: {
-    flexDirection: 'row',
-    borderTopColor: '#333333',
-    borderTopWidth: 1,
-  },
-  tab: {
-    height: 50,
-    flex: 1,
+    backgroundColor: 'white',
+    padding: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabText: {
-    color: '#333333',
-  },
   boldText: {
-    fontWeight: '700',
+    fontSize: 25,
+    color: 'red',
+    marginVertical: 16,
   },
 });
+
+export default App;

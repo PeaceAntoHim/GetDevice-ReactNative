@@ -1,5 +1,5 @@
 {
-  "name": "DeviceName",
+  "name": "Device",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -10,9 +10,9 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@react-native-community/geolocation": "^2.0.2",
     "react": "17.0.2",
-    "react-native": "0.68.0",
-    "react-native-device-info": "^8.7.0"
+    "react-native": "0.68.0"
   },
   "devDependencies": {
     "@babel/core": "^7.17.9",
