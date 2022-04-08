@@ -1,4 +1,4 @@
-package com.scan.newarchitecture.components;
+package com.qrcode.newarchitecture.components;
 
 import com.facebook.jni.HybridData;
 import com.facebook.proguard.annotations.DoNotStrip;

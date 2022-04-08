@@ -4,7 +4,7 @@ require_relative '../node_modules/@react-native-community/cli-platform-ios/nativ
 platform :ios, '11.0'
 install! 'cocoapods', :deterministic_uuids => false
 
-target 'Scan' do
+target 'Qrcode' do
   config = use_native_modules!
 
   # Flags change depending on the env values.
@@ -19,7 +19,11 @@ target 'Scan' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
-  target 'ScanTests' do
+  pod 'react-native-camera', :path => '../node_modules/react-native-camera'
+
+  pod 'RNPermissions', :path => '../node_modules/react-native-permissions'
+
+  target 'QrcodeTests' do
     inherit! :complete
     # Pods for testing
   end
